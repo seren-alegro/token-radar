@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Token Launch Radar — pre-token protocols ranked by implied launch value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.2"/><path d="M12 12L18.5 5.5"/><circle cx="16.8" cy="15.8" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.05" fill="currentColor" stroke="none"/></svg></div>
+    <div>
+      <h1>Token Launch Radar</h1>
+      <p class="sub">Every protocol in the sealed DefiLlama snapshot that still records <b>no token</b>, ranked by what its launch could be worth.</p>
+    </div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <nav class="tabs">
+    <a href="#/" data-nav="board">Board</a>
+    <a href="#/method" data-nav="method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.5C10 5 7 4.5 4 4.5v13c3 0 6 .5 8 2 2-1.5 5-2 8-2v-13c-3 0-6 .5-8 2z"/><path d="M12 6.5v13"/></svg>Method</a>
+  </nav>
+</header>
+
+<main id="boardView">
+  <section class="controls" id="controls">
+    <label><span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20.5 20.5L16.7 16.7"/></svg>Search</span> <input id="q" type="search" placeholder="protocol name or slug"></label>
+    <label><span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg>Category</span> <select id="fCat"><option value="">All categories</option></select></label>
+    <label><span class="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9.5 5L12 13 2.5 8 12 3z"/><path d="M2.5 13L12 18l9.5-5"/></svg>Chain</span> <select id="fChain"><option value="">All chains</option></select></label>
+    <label class="chk"><input id="fWatch" type="checkbox"> Watchlist only</label>
+    <span class="count" id="count"></span>
+  </section>
+  <div class="twrap">
+  <table id="board">
+    <thead><tr>
+      <th data-k="rank" class="num sortable">#<span class="arr"></span></th>
+      <th data-k="name" class="sortable">Protocol<span class="arr"></span></th>
+      <th>Category</th>
+      <th>Chains</th>
+      <th data-k="tvl_usd" class="num sortable">TVL<span class="arr"></span></th>
+      <th data-k="change_7d" class="num sortable">7d<span class="arr"></span></th>
+      <th data-k="implied_value_usd" class="num sortable">Implied value<span class="arr"></span></th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  </div>
+  <p class="hint">Click a row for the full breakdown and its farm plan. Implied value is a model estimate, not a promise of a token.</p>
+</main>
+
+<main id="detailView" hidden></main>
+
+<main id="methodView" hidden>
+  <article class="method">
+    <h2>How this radar works</h2>
+    <p>The board is built from one sealed snapshot of DefiLlama protocol data dated <b>2026-11-14</b>, with a TVL floor of $50M. Of the 758 protocols in the snapshot, 342 record no token. After removing derivative products (below), <b>198 protocols</b> remain, and every one of them is on this board — including all 40 entries of the competition watchlist.</p>
+
+    <h3>Who counts as pre-token</h3>
+    <p>A protocol is eligible when it records no token — both its CoinGecko id and its token symbol are absent from the snapshot — <i>and</i> it is not a wrapped, staked or bridged product of a protocol that already has one. The snapshot has no parent-protocol field, so derivative products are detected with observable proxies: the category is Bridge, Canonical Bridge, Liquid Staking, Liquid Restaking, Restaked BTC or CEX; the name ends in a version marker (V2, v1.5, 2.0…); the name contains the whole word “wrapped”, “staked” or “staking”; or the name begins with an exchange name (Binance, Coinbase, Bybit, Kraken, Bitget, OKX, Bitfinex, Gemini). Those tests removed 144 of the 342 tokenless records. The rule is applied at every TVL, not just above the floor.</p>
+
+    <h3>The valuation model</h3>
+    <p class="formula">implied value = TVL × peer multiple × growth factor × maturity factor</p>
+    <ul>
+      <li><b>Peer multiple.</b> For the protocol's own category, take every tokenized protocol in the snapshot that records a market cap, compute its market-cap ÷ TVL ratio, and use the <b>40th percentile</b> — what the market pays for the cheaper half of that kind of business — times a <b>0.85 launch discount</b>, because a token that does not exist yet should price below seasoned peers. The result is clamped to 0.02–2.5. If a category has fewer than three such peers, the whole snapshot's 40th-percentile multiple is used instead; that fallback is what prices Risk Curators, which has only one peer with a recorded market cap. The detail view of every protocol shows which multiple was applied.</li>
+      <li><b>Growth factor.</b> 1 + (7-day TVL change, clamped to −50%…+100%) × 0.45. A strong week can lift the estimate by at most 45%; an unreported change scores exactly 1.</li>
+      <li><b>Maturity factor.</b> 0.78 + 0.22 × (age in days ÷ 1460), capped at 1.0. A protocol that has run four years without a token is treated as fully seasoned; one with no recorded listing date scores 0.80.</li>
+    </ul>
+    <p>No protocol name, slug or category value is hardcoded anywhere in the model — every number on this page is derived from the snapshot itself. Rows are sorted by implied value, with TVL and then slug breaking ties.</p>
+
+    <h3>Reading the board honestly</h3>
+    <p>An implied value is the market capitalisation a launch <i>might</i> reach if the market priced the new token like the cheaper half of its already-tokenized peers. It is a ranking tool, not a forecast: most of these protocols may never issue a token, and a launch can price far above or below its row. The farm plan on each detail page lists concrete steps, costs and timeframes for becoming an active user of that protocol — the only part of a future airdrop or launch a reader actually controls.</p>
+    <p class="foot">Built for the make.fun token-radar-01 competition. Data: DefiLlama snapshot as of 2026-11-14.</p>
+  </article>
+</main>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
